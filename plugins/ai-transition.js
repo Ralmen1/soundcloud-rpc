@@ -277,7 +277,8 @@ function aiTransitionPage() {
     }
 
     function queueButton() {
-        return document.querySelector('.playbackSoundBadge__showQueue, .playControls__queue button, button[title*="queue" i]');
+        // Only the "Next up" toggle: broader selectors also match the panel's "Clear" button and would wipe the queue.
+        return document.querySelector('.playbackSoundBadge__showQueue');
     }
 
     // The queue list only exists in the DOM after the panel is opened once; open it invisibly and close it again.
