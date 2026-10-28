@@ -956,6 +956,29 @@ export class SettingsManager {
                     <input type="text" class="textInput" id="proxyPort" placeholder="${this.translationService.translate('proxyPort')}" data-i18n-placeholder="proxyPort" value="${
                         this.store.get('proxyPort') || ''
                     }">
+                    <select class="textInput" id="proxyScheme">
+                        ${['http', 'https', 'socks5']
+                            .map(
+                                (scheme) =>
+                                    `<option value="${scheme}" ${
+                                        (this.store.get('proxyScheme') || 'http') === scheme ? 'selected' : ''
+                                    }>${scheme.toUpperCase()}</option>`,
+                            )
+                            .join('')}
+                    </select>
+                    <input type="text" class="textInput" id="proxyUser" placeholder="${this.translationService.translate('proxyUser')}" data-i18n-placeholder="proxyUser" value="${
+                        this.store.get('proxyData.user') || ''
+                    }">
+                    <input type="password" class="textInput" id="proxyPassword" placeholder="${this.translationService.translate('proxyPassword')}" data-i18n-placeholder="proxyPassword" value="${
+                        this.store.get('proxyData.password') || ''
+                    }">
+                    <div class="setting-item">
+                        <span data-i18n="proxySoundCloudOnly">${this.translationService.translate('proxySoundCloudOnly')}</span>
+                        <label class="toggle">
+                            <input type="checkbox" id="proxySoundCloudOnly" ${this.store.get('proxySoundCloudOnly', true) ? 'checked' : ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
                 </div>
             </div>
 
@@ -1435,6 +1458,22 @@ export class SettingsManager {
 
             document.getElementById('proxyPort')?.addEventListener('change', (e) => {
                 ipcRenderer.send('setting-changed', { key: 'proxyPort', value: e.target.value });
+            });
+
+            document.getElementById('proxyScheme')?.addEventListener('change', (e) => {
+                ipcRenderer.send('setting-changed', { key: 'proxyScheme', value: e.target.value });
+            });
+
+            document.getElementById('proxyUser')?.addEventListener('change', (e) => {
+                ipcRenderer.send('setting-changed', { key: 'proxyUser', value: e.target.value });
+            });
+
+            document.getElementById('proxyPassword')?.addEventListener('change', (e) => {
+                ipcRenderer.send('setting-changed', { key: 'proxyPassword', value: e.target.value });
+            });
+
+            document.getElementById('proxySoundCloudOnly')?.addEventListener('change', (e) => {
+                ipcRenderer.send('setting-changed', { key: 'proxySoundCloudOnly', value: e.target.checked });
             });
 
             document.getElementById('lastFmEnabled')?.addEventListener('change', (e) => {

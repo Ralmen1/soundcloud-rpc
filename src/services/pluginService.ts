@@ -1,5 +1,5 @@
 import { app, ipcMain, type BrowserView } from 'electron';
-import { readFileSync, existsSync, readdirSync, statSync, watch, mkdirSync } from 'fs';
+import { readFileSync, existsSync, readdirSync, statSync, watch, mkdirSync, copyFileSync } from 'fs';
 import path, { join, basename, extname } from 'path';
 import type ElectronStore from 'electron-store';
 import { EventEmitter } from 'events';
@@ -50,6 +50,14 @@ export class PluginService {
         try {
             if (!existsSync(this.pluginsPath)) {
                 mkdirSync(this.pluginsPath, { recursive: true });
+            }
+            // Packaged builds ship some plugins as resources; copy them into the user plugins folder once.
+            const bundled = join(process.resourcesPath || '', 'plugins');
+            if (app.isPackaged && existsSync(bundled)) {
+                for (const file of readdirSync(bundled)) {
+                    const target = join(this.pluginsPath, file);
+                    if (!existsSync(target)) copyFileSync(join(bundled, file), target);
+                }
             }
         } catch (error) {
             console.error('Failed to create plugins directory:', error);

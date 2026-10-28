@@ -8,4 +8,7 @@ contextBridge.exposeInMainWorld('soundcloudAPI', {
             reason,
         });
     },
+    // AI transition: aTail/bHead are { left, right, sampleRate } at 44.1 kHz.
+    aiTransitionRender: (aTail: unknown, bHead: unknown) => ipcRenderer.invoke('ai-transition:render', aTail, bHead),
+    aiTransitionPrepareModel: () => ipcRenderer.invoke('ai-transition:prepare-model'),
 });

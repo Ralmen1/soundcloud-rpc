@@ -36,6 +36,10 @@
             {
                 "from": "assets/icons",
                 "to": "assets/icons"
+            },
+            {
+                "from": "plugins/ai-transition.js",
+                "to": "plugins/ai-transition.js"
             }
         ],
         "files": [
@@ -82,7 +86,10 @@
                     "StartupWMClass": "soundcloud-rpc"
                 }
             }
-        }
+        },
+        "asarUnpack": [
+            "node_modules/onnxruntime-node/**"
+        ]
     },
     "devDependencies": {
         "@eslint/eslintrc": "^3.3.1",
@@ -110,6 +117,7 @@
         "electron-prompt": "^1.7.0",
         "electron-store": "^8.1.0",
         "electron-updater": "^6.3.4",
-        "electron-window-state": "^5.0.3"
+        "electron-window-state": "^5.0.3",
+        "onnxruntime-node": "^1.22.0"
     }
 }
