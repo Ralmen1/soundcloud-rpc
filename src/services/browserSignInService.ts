@@ -22,12 +22,31 @@ const WATCH_MS = 5 * 60_000;
 let stopWatching: (() => void) | null = null;
 
 export function attachBrowserSignIn(content: WebContents, onHint: (message: string) => void): void {
-    content.setWindowOpenHandler(({ url }) => {
-        if (!isGoogleSignInUrl(url)) return { action: 'allow' };
+    const handOff = (url: string) => {
         void shell.openExternal(url);
         watchClipboard(content);
         onHint('Войди через Google в браузере, потом скопируй адрес страницы, куда он перекинет (Ctrl+L, Ctrl+C).');
+    };
+    content.setWindowOpenHandler(({ url }) => {
+        if (!isGoogleSignInUrl(url)) return { action: 'allow' };
+        handOff(url);
         return { action: 'deny' };
+    });
+    // soundcloud.com may open the popup blank and only then point it at Google: catch that navigation too.
+    content.on('did-create-window', (popup) => {
+        let handedOff = false;
+        const intercept = (event: { preventDefault: () => void }, url: string) => {
+            if (handedOff || !isGoogleSignInUrl(url) || popup.isDestroyed()) return;
+            handedOff = true;
+            event.preventDefault();
+            handOff(url);
+            popup.close();
+        };
+        popup.webContents.on('will-navigate', (event) => intercept(event, event.url));
+        popup.webContents.on('will-redirect', (event) => intercept(event, event.url));
+        popup.webContents.on('did-start-navigation', (event) => {
+            if (event.isMainFrame) intercept({ preventDefault: () => popup.webContents.stop() }, event.url);
+        });
     });
 }
 
