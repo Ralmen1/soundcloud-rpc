@@ -132,14 +132,20 @@ function googleSignInHeaders(headers: Record<string, string>): Record<string, st
     return result;
 }
 
-// Sign-in popups opened by soundcloud.com: give Google's a Firefox navigator.userAgent as well.
+// Google's sign-in may open in a popup or in the main SoundCloud view itself: either way its pages get a Firefox
+// navigator.userAgent too, and the view goes back to the normal one when it returns to SoundCloud.
 app.on('web-contents-created', (_event, contents) => {
-    if (contents.getType() !== 'window') return;
+    const type = contents.getType();
+    if (type !== 'window' && type !== 'browserView') return;
     contents.on('did-start-navigation', (details) => {
-        if (!details.isMainFrame) return;
-        if (isGoogleSignIn(details.url) && contents.getUserAgent() !== googleSignInUserAgent) {
+        if (!details.isMainFrame || details.isSameDocument) return;
+        const google = isGoogleSignIn(details.url);
+        const current = contents.getUserAgent();
+        if (google && current !== googleSignInUserAgent) {
             contents.setUserAgent(googleSignInUserAgent);
-            if (!details.isSameDocument) contents.loadURL(details.url);
+            contents.loadURL(details.url);
+        } else if (!google && current === googleSignInUserAgent && !details.url.startsWith('https://accounts.')) {
+            contents.setUserAgent(globalUserAgent);
         }
     });
 });
