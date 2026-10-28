@@ -13,6 +13,7 @@ describe('browser sign-in urls', () => {
 
     it('accepts only the SoundCloud Google callback', () => {
         expect(isGoogleCallbackUrl(' https://secure.soundcloud.com/web-auth-callback-google?code=1&state=2 ')).toBe(true);
+        expect(isGoogleCallbackUrl('https://secure.soundcloud.com/web-auth-callback-google#id_token=1&state=2')).toBe(true);
         expect(isGoogleCallbackUrl('https://evil.example/web-auth-callback-google?code=1')).toBe(false);
         expect(isGoogleCallbackUrl('https://secure.soundcloud.com/web-auth-callback-google')).toBe(false);
     });

@@ -11,14 +11,16 @@ export function isGoogleSignInUrl(url: string): boolean {
 }
 
 export function isGoogleCallbackUrl(url: string): boolean {
-    return url.trim().startsWith(`${GOOGLE_CALLBACK}?`);
+    // Google can hand the result back in the query or in the #fragment.
+    const text = url.trim();
+    return text.startsWith(`${GOOGLE_CALLBACK}?`) || text.startsWith(`${GOOGLE_CALLBACK}#`);
 }
 
 // Google blocks sign-in inside embedded browsers, so its popup is sent to the default browser instead.
 // After signing in there, the browser lands on SoundCloud's callback URL; copying that address (Ctrl+L, Ctrl+C)
 // is enough: the app picks it up from the clipboard and opens it as the popup soundcloud.com expected,
 // which finishes the sign-in inside the app.
-const WATCH_MS = 5 * 60_000;
+const WATCH_MS = 15 * 60_000;
 let stopWatching: (() => void) | null = null;
 
 export function attachBrowserSignIn(content: WebContents, onHint: (message: string) => void): void {
