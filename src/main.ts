@@ -17,6 +17,7 @@ import { setupDarwinMenu } from './macos/menu';
 import { NotificationManager } from './notifications/notificationManager';
 import { SettingsManager } from './settings/settingsManager';
 import { ProxyService } from './services/proxyService';
+import { attachBrowserSignIn } from './services/browserSignInService';
 import { AiTransitionService } from './aiTransition/aiTransitionService';
 import { PresenceService } from './services/presenceService';
 import { LastFmService } from './services/lastFmService';
@@ -636,6 +637,7 @@ async function init() {
     contentView.setAutoResize({ width: true, height: true });
 
     contentView.webContents.setUserAgent(globalUserAgent);
+    attachBrowserSignIn(contentView.webContents, (message) => queueToastNotification(message));
 
     // Initialize services
     translationService = new TranslationService();
