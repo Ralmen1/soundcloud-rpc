@@ -108,6 +108,42 @@ const globalPlatformHint = isMac ? '"macOS"' : '"Windows"';
 
 app.userAgentFallback = globalUserAgent;
 
+// Google refuses sign-in from embedded Chromium ("this browser may not be secure"). It still accepts a Firefox
+// identity, which has no client hints to contradict it, so Google's sign-in pages and popups get one.
+const googleSignInUserAgent = isMac
+    ? 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:140.0) Gecko/20100101 Firefox/140.0'
+    : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0';
+
+function isGoogleSignIn(url: string): boolean {
+    try {
+        const { hostname } = new URL(url);
+        return hostname === 'accounts.google.com' || hostname === 'accounts.youtube.com' || hostname.endsWith('.accounts.google.com');
+    } catch {
+        return false;
+    }
+}
+
+function googleSignInHeaders(headers: Record<string, string>): Record<string, string> {
+    const result: Record<string, string> = {};
+    for (const [key, value] of Object.entries(headers)) {
+        if (!/^sec-ch-ua/i.test(key) && !/^user-agent$/i.test(key)) result[key] = value;
+    }
+    result['User-Agent'] = googleSignInUserAgent;
+    return result;
+}
+
+// Sign-in popups opened by soundcloud.com: give Google's a Firefox navigator.userAgent as well.
+app.on('web-contents-created', (_event, contents) => {
+    if (contents.getType() !== 'window') return;
+    contents.on('did-start-navigation', (details) => {
+        if (!details.isMainFrame) return;
+        if (isGoogleSignIn(details.url) && contents.getUserAgent() !== googleSignInUserAgent) {
+            contents.setUserAgent(googleSignInUserAgent);
+            if (!details.isSameDocument) contents.loadURL(details.url);
+        }
+    });
+});
+
 function applyMacMemoryOptimizations(): void {
     if (!isMac) return;
 
@@ -350,6 +386,10 @@ function createBrowserWindow(windowState: any): BrowserWindow {
     const session = window.webContents.session;
     session.webRequest.onBeforeSendHeaders((details, callback) => {
         // bypass header tampering for google &&& apple &&& cobalt endpoints
+        if (isGoogleSignIn(details.url)) {
+            callback({ requestHeaders: googleSignInHeaders(details.requestHeaders) });
+            return;
+        }
         if (
             details.url.includes('google') ||
             details.url.includes('icloud') ||
@@ -733,6 +773,10 @@ async function init() {
     const session = contentView.webContents.session;
     session.webRequest.onBeforeSendHeaders((details, callback) => {
         // bypass header tampering for google &&& apple &&& cobalt endpoints
+        if (isGoogleSignIn(details.url)) {
+            callback({ requestHeaders: googleSignInHeaders(details.requestHeaders) });
+            return;
+        }
         if (
             details.url.includes('google') ||
             details.url.includes('icloud') ||
