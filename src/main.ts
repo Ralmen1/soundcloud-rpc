@@ -17,7 +17,6 @@ import { setupDarwinMenu } from './macos/menu';
 import { NotificationManager } from './notifications/notificationManager';
 import { SettingsManager } from './settings/settingsManager';
 import { ProxyService } from './services/proxyService';
-import { attachBrowserSignIn } from './services/browserSignInService';
 import { AiTransitionService } from './aiTransition/aiTransitionService';
 import { PresenceService } from './services/presenceService';
 import { LastFmService } from './services/lastFmService';
@@ -102,9 +101,12 @@ let isQuitting = false;
 let memoryPressureHandlerRegistered = false;
 const devMode = process.argv.includes('--dev');
 const isMac = process.platform === 'darwin';
+// Report the Chromium version this app actually runs (as Chrome would, without the Electron token).
+// A hard-coded old version contradicts the engine's own client hints, and Google rejects sign-in for it.
+const chromeMajor = process.versions.chrome.split('.')[0];
 const globalUserAgent = isMac
-    ? 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-    : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+    ? `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeMajor}.0.0.0 Safari/537.36`
+    : `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeMajor}.0.0.0 Safari/537.36`;
 const globalPlatformHint = isMac ? '"macOS"' : '"Windows"';
 
 app.userAgentFallback = globalUserAgent;
@@ -365,7 +367,7 @@ function createBrowserWindow(windowState: any): BrowserWindow {
             ...details.requestHeaders,
             'Accept-Language': 'en-US,en;q=0.9',
             Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-            'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+            'sec-ch-ua': `"Not_A Brand";v="8", "Chromium";v="${chromeMajor}"`,
             'sec-ch-ua-mobile': '?0',
             'sec-ch-ua-platform': globalPlatformHint, // dynamically set platform hint based on OS
             'Upgrade-Insecure-Requests': '1',
@@ -637,7 +639,6 @@ async function init() {
     contentView.setAutoResize({ width: true, height: true });
 
     contentView.webContents.setUserAgent(globalUserAgent);
-    attachBrowserSignIn(contentView.webContents, (message) => queueToastNotification(message));
 
     // Initialize services
     translationService = new TranslationService();
@@ -748,7 +749,7 @@ async function init() {
             ...details.requestHeaders,
             'Accept-Language': 'en-US,en;q=0.9',
             Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-            'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+            'sec-ch-ua': `"Not_A Brand";v="8", "Chromium";v="${chromeMajor}"`,
             'sec-ch-ua-mobile': '?0',
             'sec-ch-ua-platform': globalPlatformHint, // dynamically set platform hint based on OS
             'Upgrade-Insecure-Requests': '1',
