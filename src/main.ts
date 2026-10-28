@@ -49,6 +49,8 @@ const store = new Store({
         proxyHost: '',
         proxyPort: '',
         proxyData: { user: '', password: '' },
+        proxyScheme: 'http',
+        proxySoundCloudOnly: true,
         lastFmEnabled: false,
         lastFmApiKey: '',
         lastFmSecret: '',
@@ -644,7 +646,9 @@ async function init() {
     });
     notificationManager = new NotificationManager(mainWindow);
     settingsManager = new SettingsManager(mainWindow, store, translationService);
-    proxyService = new ProxyService(mainWindow, store, queueToastNotification);
+    proxyService = new ProxyService(store, queueToastNotification);
+    proxyService.addSession(mainWindow.webContents.session);
+    proxyService.addSession(contentView.webContents.session);
     presenceService = new PresenceService(store, translationService);
     lastFmService = new LastFmService(contentView, store);
     webhookService = new WebhookService(store);
@@ -981,9 +985,7 @@ async function init() {
 
     // handle applying all changes
     ipcMain.on('apply-changes', async () => {
-        if (store.get('proxyEnabled')) {
-            await proxyService.apply();
-        }
+        await proxyService.apply();
 
         if (store.get('lastFmEnabled')) {
             await lastFmService.authenticate();
@@ -1395,6 +1397,13 @@ function initializeShortcuts() {
 }
 
 // app lifecycle handlers
+app.on('login', (event, _webContents, _details, authInfo, callback) => {
+    const credentials = proxyService?.getCredentials(authInfo);
+    if (!credentials) return;
+    event.preventDefault();
+    callback(credentials.username, credentials.password);
+});
+
 app.on('ready', init);
 
 app.on('window-all-closed', function () {
@@ -1462,6 +1471,9 @@ function setupTranslationHandlers() {
             proxyHost: translationService.translate('proxyHost'),
             proxyPort: translationService.translate('proxyPort'),
             enableProxy: translationService.translate('enableProxy'),
+            proxyUser: translationService.translate('proxyUser'),
+            proxyPassword: translationService.translate('proxyPassword'),
+            proxySoundCloudOnly: translationService.translate('proxySoundCloudOnly'),
             enableLastFm: translationService.translate('enableLastFm'),
             lastfm: translationService.translate('lastfm'),
             lastFmApiKey: translationService.translate('lastFmApiKey'),
